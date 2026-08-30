@@ -37,10 +37,10 @@ jobs:
           mkdir package
           rsync -a --exclude='.git' --exclude='package' ./ package/Szydelko_Studio_PWA/
           cd package
-          zip -qr Szydelko_Studio_PWA_v2.0.1.zip Szydelko_Studio_PWA
+          zip -qr Szydelko_Studio_PWA_v2.0.2.zip Szydelko_Studio_PWA
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: Szydelko_Studio_PWA_v2.0.1
-          path: package/Szydelko_Studio_PWA_v2.0.1.zip
+          name: Szydelko_Studio_PWA_v2.0.2
+          path: package/Szydelko_Studio_PWA_v2.0.2.zip
           if-no-files-found: error
