@@ -1,8 +1,8 @@
 # Szydełko Studio
 
-## Wersja 2.0.1
+## Wersja 2.0.2
 
-Audyt poprawności: spójne tryby przeliczania, zachowanie własnego rozmiaru próbki, bezpieczne raporty graficzne, poprawione cofanie edycji, unieważnianie nieaktualnych wyników przeliczeń oraz eksport/druk niezależny od zoomu i obrotu widoku.
+Audyt poprawności: poprawione kolejne, wielokrotne przeliczanie bez kumulowania starej skali, zastępowanie starej grupy raportu przy wyznaczaniu nowego raportu oraz jawne oznaczenie próbkowania schematu przy ponad 120 oczkach. Zachowane wcześniejsze poprawki spójności raportów, próbki, cofania, importu i eksportu.
 
 Responsywna PWA do projektowania, przeliczania i analizy wzorów szydełkowych.
 
