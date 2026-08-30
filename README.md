@@ -59,7 +59,7 @@ Nie zapisuje tokenu GitHub. Korzysta z logowania skonfigurowanego w Git / Git Cr
 
 ## GitHub Pages
 
-Repo zawiera workflow `.github/workflows/pages.yml`. Po włączeniu GitHub Pages w trybie **GitHub Actions** kolejne push'e na `main` będą automatycznie publikowały aplikację.
+Repo zawiera workflow `.github/workflows/pages.yml`. Najpierw włącz GitHub Pages w ustawieniach repozytorium i wybierz **GitHub Actions**, a potem uruchom workflow **Deploy GitHub Pages** ręcznie z zakładki Actions. Celowo nie uruchamia się przy każdym pushu, dopóki Pages nie zostanie skonfigurowane.
 
 ## Uwaga dotycząca obliczeń
 
