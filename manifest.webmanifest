@@ -1,0 +1,14 @@
+{
+  "name": "Szydełko Studio",
+  "short_name": "Szydełko",
+  "description": "Projektowanie, przeliczanie i analiza wzorów szydełkowych.",
+  "lang": "pl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4fb",
+  "theme_color": "#7c3aed",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
