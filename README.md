@@ -1,66 +1,59 @@
-# Szydełko Studio
+# Szydełko Studio 2.0
 
-Responsywna PWA do projektowania, przeliczania i wstępnej analizy wzorów szydełkowych.
+Responsywna PWA do projektowania, przeliczania i analizy wzorów szydełkowych.
 
-## Co działa
+## Najważniejsze funkcje
 
-- projekt i parametry próbki,
-- okrążenia, raporty, powtórzenia i przyrosty,
-- graficzny podgląd okrągłego schematu SVG,
-- przeliczanie rozmiaru z uwzględnieniem zmiany gęstości,
-- korekta wyniku do pełnego raportu,
-- kontrola spójności liczby oczek / raportów / przyrostów,
-- biblioteka podstawowych symboli PL / US / UK,
-- eksport projektu do JSON,
-- eksport schematu do SVG,
-- kopiowanie instrukcji tekstowej,
-- druk / zapis do PDF przez przeglądarkę,
-- import projektu JSON,
-- autosave w `localStorage`,
-- cofanie / ponawianie,
-- praca offline dzięki Service Worker,
-- skalowanie UI 80–150%,
-- układ desktop / tablet / telefon.
+- tryb prosty: zwiększ, zmniejsz, nowy wzór, zmiana włóczki/szydełka, sprawdzenie wzoru,
+- projekty okrągłe, kwadratowe i prostokątne z osobnym sposobem rysowania,
+- jednostki cm/mm,
+- własny wymiar próbki zamiast sztywnego 10 cm,
+- osobna gęstość oczek i rzędów dla próbki źródłowej i docelowej,
+- przeliczanie liczby oczek oraz liczby okrążeń/rzędów,
+- tryby przeliczania: automatyczny, zachowaj raport, zachowaj liczbę motywów, ustaw liczbę motywów, najbliższa liczba całkowita,
+- edytor graficzny symboli: dodawanie, zaznaczanie, wielokrotny wybór, przeciąganie i usuwanie,
+- tworzenie raportu z zaznaczonych symboli,
+- zoom, obracanie, reset widoku, kółko myszy i pinch-to-zoom na ekranie dotykowym,
+- podgląd: schemat / instrukcja / oba,
+- rozszerzona biblioteka symboli PL / US / UK,
+- kontrola raportów, powtórzeń, przyrostów, próbki i graficznych grup raportu,
+- eksport projektu JSON, schematu SVG, instrukcji tekstowej oraz druk/PDF,
+- import JSON, autosave w localStorage, undo/redo,
+- praca offline przez Service Worker,
+- skalowanie interfejsu 80–150%,
+- responsywny układ PC/tablet/telefon z pełną nawigacją mobilną.
 
 ## Uruchomienie lokalne
 
-Najprościej uruchomić lokalny serwer HTTP w katalogu projektu, np.:
+W katalogu projektu uruchom np.:
 
 ```powershell
 python -m http.server 8080
 ```
 
-Następnie otworzyć `http://localhost:8080`.
+Potem otwórz `http://localhost:8080`.
 
-> Service Worker i instalacja PWA wymagają HTTP/HTTPS. Samo dwukrotne kliknięcie `index.html` nie daje pełnego trybu PWA.
+Service Worker i instalacja PWA wymagają HTTP/HTTPS.
 
 ## Wysłanie projektu na GitHub
 
-W katalogu jest `Deploy-GitHub.ps1`. Domyślnie wysyła projekt do:
+W katalogu jest `Deploy-GitHub.ps1`. Domyślnie synchronizuje projekt z:
 
 `https://github.com/tomalawsb/Szyde-ko.git`
 
-Uruchom z PowerShell:
+Uruchom:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\Deploy-GitHub.ps1
 ```
 
-Skrypt:
-
-1. klonuje aktualne repo do katalogu tymczasowego,
-2. synchronizuje pliki projektu,
-3. tworzy commit tylko wtedy, gdy są zmiany,
-4. wysyła gałąź `main`,
-5. usuwa katalog tymczasowy.
-
-Nie zapisuje tokenu GitHub. Korzysta z logowania skonfigurowanego w Git / Git Credential Manager.
+Skrypt klonuje bieżące repozytorium do katalogu tymczasowego, synchronizuje pliki, tworzy commit tylko przy zmianach i wykonuje push na `main`. Nie przechowuje tokenu; używa uwierzytelnienia skonfigurowanego w Git / Git Credential Manager.
 
 ## GitHub Pages
 
-Repo zawiera workflow `.github/workflows/pages.yml`. Najpierw włącz GitHub Pages w ustawieniach repozytorium i wybierz **GitHub Actions**, a potem uruchom workflow **Deploy GitHub Pages** ręcznie z zakładki Actions. Celowo nie uruchamia się przy każdym pushu, dopóki Pages nie zostanie skonfigurowane.
+Repo zawiera workflow `.github/workflows/pages.yml`. GitHub Pages trzeba jednorazowo włączyć w ustawieniach repozytorium i jako źródło wybrać **GitHub Actions**. Następnie workflow **Deploy GitHub Pages** można uruchomić ręcznie z zakładki Actions.
 
-## Uwaga dotycząca obliczeń
+## Ważne
 
-Analiza możliwego falowania lub ściągania jest heurystyczna. Wzory koronkowe, łuki z oczek łańcuszka, różne napięcie nitki i nietypowe konstrukcje wymagają oceny osoby wykonującej robótkę.
+Ocena możliwego falowania lub podwijania jest heurystyczna. Konstrukcje koronkowe, łuki, klastry i nietypowe naprężenie nitki mogą celowo odbiegać od prostego modelu geometrycznego.
