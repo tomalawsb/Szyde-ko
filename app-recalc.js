@@ -129,7 +129,7 @@ function analyze() {
   const items=[],g=gaugeInfo();
   if(g.sourceStitchPerCm<=0||g.sourceRowPerCm<=0||g.targetStitchPerCm<=0||g.targetRowPerCm<=0)items.push({type:'error',round:0,title:'Niepełna próbka',text:'Gęstość oczek i rzędów musi być większa od zera.'});
   state.rounds.forEach((r,i)=>{
-    if(r.rapport>0&&r.stitchCount%r.rapport!==0){const low=Math.floor(r.stitchCount/r.rapport)*r.rapport,high=Math.ceil(r.stitchCount/r.rapport)*r.rapport;items.push({type:'error',round:r.n,title:'Liczba oczek nie pasuje do raportu',text:`${r.stitchCount} nie jest wielokrotnością ${r.rapport}. Najbliżej: ${Math.max(r.rapport,low)} lub ${Math.max(r.rapport,high)}.`});
+    if(r.rapport>0&&r.stitchCount%r.rapport!==0){const low=Math.floor(r.stitchCount/r.rapport)*r.rapport,high=Math.ceil(r.stitchCount/r.rapport)*r.rapport;items.push({type:'error',round:r.n,title:'Liczba oczek nie pasuje do raportu',text:`${r.stitchCount} nie jest wielokrotnością ${r.rapport}. Najbliżej: ${Math.max(r.rapport,low)} lub ${Math.max(r.rapport,high)}.`});}
     if(r.rapport>0&&r.repeats*r.rapport!==r.stitchCount)items.push({type:'warning',round:r.n,title:'Niespójna liczba powtórzeń',text:`${r.repeats} × ${r.rapport} = ${r.repeats*r.rapport}, wpisano ${r.stitchCount}.`});
     const groups=new Map();state.manualSymbols.filter(m=>m.roundId===r.id&&m.rapportGroup).forEach(m=>groups.set(m.rapportGroup,(groups.get(m.rapportGroup)||0)+1));
     groups.forEach(count=>{if(count!==r.rapport)items.push({type:'warning',round:r.n,title:'Graficzny raport różni się od danych',text:`Zaznaczona grupa ma ${count} symboli, a raport liczbowy ${r.rapport}.`});});
