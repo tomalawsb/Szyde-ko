@@ -93,6 +93,7 @@ function sceneTransform() {
 }
 
 function generatedCount(r) { return clamp(Math.round(r.stitchCount)||1,1,120); }
+function generatedPreviewNote(r,count) { return r.stitchCount > count ? ` · podgląd ${count}/${r.stitchCount}` : ''; }
 
 function rectPerimeterPoint(cx,cy,w,h,t) {
   const p = 2*(w+h), d=((t%1)+1)%1*p, left=cx-w/2, top=cy-h/2;
@@ -108,7 +109,7 @@ function renderCircleGeometry(rounds) {
     const radius=Math.max(18,step*(i+1)), active=r.id===state.activeRoundId, glyph=escapeHtml(symbolById(r.stitchType).glyph), count=generatedCount(r);
     out += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${active?'#7c3aed':'#c9bedc'}" stroke-width="${active?3:1.4}" stroke-dasharray="${r.stitchType==='chain'||r.stitchType==='chainspace'?'5 5':'0'}"/>`;
     for(let k=0;k<count;k++){const a=-Math.PI/2+Math.PI*2*k/count,x=cx+Math.cos(a)*radius,y=cy+Math.sin(a)*radius,rot=a*180/Math.PI+90;out+=`<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" transform="rotate(${rot.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)})" text-anchor="middle" dominant-baseline="central" font-size="${active?15:12}" fill="${active?'#5b21b6':'#786d84'}">${glyph}</text>`;}
-    out += `<text x="${cx+8}" y="${cy-radius+12}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}</text>`;
+    out += `<text x="${cx+8}" y="${cy-radius+12}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}${generatedPreviewNote(r,count)}</text>`;
   });
   return out;
 }
@@ -119,7 +120,7 @@ function renderSquareGeometry(rounds) {
     const size=Math.max(36,step*(i+1)), active=r.id===state.activeRoundId, glyph=escapeHtml(symbolById(r.stitchType).glyph), count=generatedCount(r);
     out += `<rect x="${cx-size/2}" y="${cy-size/2}" width="${size}" height="${size}" rx="3" fill="none" stroke="${active?'#7c3aed':'#c9bedc'}" stroke-width="${active?3:1.4}"/>`;
     for(let k=0;k<count;k++){const p=rectPerimeterPoint(cx,cy,size,size,k/count);out+=`<text x="${p.x.toFixed(2)}" y="${p.y.toFixed(2)}" transform="rotate(${p.rot} ${p.x.toFixed(2)} ${p.y.toFixed(2)})" text-anchor="middle" dominant-baseline="central" font-size="${active?15:12}" fill="${active?'#5b21b6':'#786d84'}">${glyph}</text>`;}
-    out += `<text x="${cx-size/2+6}" y="${cy-size/2+13}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}</text>`;
+    out += `<text x="${cx-size/2+6}" y="${cy-size/2+13}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}${generatedPreviewNote(r,count)}</text>`;
   });
   return out;
 }
@@ -132,7 +133,7 @@ function renderRectangleGeometry(rounds) {
     const y=rounds.length===1?320:top+i*gap, active=r.id===state.activeRoundId,glyph=escapeHtml(symbolById(r.stitchType).glyph),count=clamp(Math.round(r.stitchCount)||1,1,120);
     out += `<line x1="${left}" y1="${y}" x2="${left+w}" y2="${y}" stroke="${active?'#7c3aed':'#c9bedc'}" stroke-width="${active?3:1.4}"/>`;
     for(let k=0;k<count;k++){const x=left+(count===1?0:w*k/(count-1));out+=`<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="${active?14:11}" fill="${active?'#5b21b6':'#786d84'}">${glyph}</text>`;}
-    out += `<text x="${left+5}" y="${y-5}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}</text>`;
+    out += `<text x="${left+5}" y="${y-5}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}${generatedPreviewNote(r,count)}</text>`;
   });
   return out;
 }
@@ -198,7 +199,11 @@ function setSelectedAsRapport() {
     return toast(`Nie można ustawić raportu ${rapport}: ${r.stitchCount} oczek nie dzieli się bez reszty. Najbliżej: ${low} lub ${high}.`);
   }
   const group=cryptoId();
-  mutate(()=>{selected.forEach(m=>m.rapportGroup=group);r.rapport=rapport;r.repeats=r.stitchCount/rapport;});
+  mutate(()=>{
+    state.manualSymbols.filter(m=>m.roundId===r.id).forEach(m=>m.rapportGroup=null);
+    selected.forEach(m=>m.rapportGroup=group);
+    r.rapport=rapport;r.repeats=r.stitchCount/rapport;
+  });
   toast(`Raport ustawiony: ${rapport} symboli × ${r.repeats}.`);
 }
 
