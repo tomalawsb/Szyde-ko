@@ -16,6 +16,8 @@ jobs:
           node --check app-editor.js
           node --check app-recalc.js
           node --check app-main.js
+      - name: Test calculation invariants
+        run: node tests/logic-test.js
       - name: Validate required files
         run: |
           test -f index.html
@@ -23,6 +25,7 @@ jobs:
           test -f manifest.webmanifest
           test -f sw.js
           test -f Deploy-GitHub.ps1
+          test -f tests/logic-test.js
           test -f assets/icon-192.png
           test -f assets/icon-512.png
           grep -q 'app-core.js' index.html
@@ -34,10 +37,10 @@ jobs:
           mkdir package
           rsync -a --exclude='.git' --exclude='package' ./ package/Szydelko_Studio_PWA/
           cd package
-          zip -qr Szydelko_Studio_PWA_v2.0.0.zip Szydelko_Studio_PWA
+          zip -qr Szydelko_Studio_PWA_v2.0.1.zip Szydelko_Studio_PWA
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: Szydelko_Studio_PWA_v2.0.0
-          path: package/Szydelko_Studio_PWA_v2.0.0.zip
+          name: Szydelko_Studio_PWA_v2.0.1
+          path: package/Szydelko_Studio_PWA_v2.0.1.zip
           if-no-files-found: error

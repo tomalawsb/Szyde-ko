@@ -1,4 +1,4 @@
-const CACHE = 'szydelko-studio-v2.0.0';
+const CACHE = 'szydelko-studio-v2.0.1';
 const ASSETS = ['./', './index.html', './styles.css', './app-core.js', './app-editor.js', './app-recalc.js', './app-main.js', './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

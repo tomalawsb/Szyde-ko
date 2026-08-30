@@ -22,6 +22,8 @@ function exportProject() {
 function exportSvg() {
   renderScheme();
   const svg=$('schemeSvg').cloneNode(true);
+  const scene=svg.querySelector('#schemeScene');
+  if(scene) scene.removeAttribute('transform');
   svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
   svg.setAttribute('width','1600');svg.setAttribute('height','1600');
   const xml=`<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svg)}`;
@@ -32,6 +34,15 @@ async function copyInstruction() {
   const text=buildInstruction().join('\n');
   try { await navigator.clipboard.writeText(text); toast('Instrukcja skopiowana.'); }
   catch { const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Instrukcja skopiowana.'); }
+}
+
+function printPattern() {
+  const previous={...state.viewTransform};
+  state.viewTransform={zoom:1,rotation:0};
+  renderScheme();
+  window.print();
+  state.viewTransform=previous;
+  renderScheme();
 }
 
 function makeEmptyProject() {
@@ -60,7 +71,7 @@ function importProject(file) {
 }
 
 function updateCalcModeUi() {
-  const isCustom=$('calcMode').value==='motifCount'; $('targetMotifsLabel').hidden=!isCustom; updateCalcFactors();
+  const isCustom=$('calcMode').value==='motifCount'; $('targetMotifsLabel').hidden=!isCustom; invalidateCalcDraft(true); updateCalcFactors();
 }
 
 function pointerDistance(a,b) { return Math.hypot(a.x-b.x,a.y-b.y); }
@@ -126,10 +137,10 @@ function bindStaticEvents() {
   $('zoomInBtn').addEventListener('click',()=>setZoom(state.viewTransform.zoom*1.2));$('zoomOutBtn').addEventListener('click',()=>setZoom(state.viewTransform.zoom/1.2));$('rotateLeftBtn').addEventListener('click',()=>rotateBy(-15));$('rotateRightBtn').addEventListener('click',()=>rotateBy(15));$('resetViewBtn').addEventListener('click',resetView);
   const wrap=$('schemeWrap');wrap.addEventListener('pointerdown',onSchemePointerDown);wrap.addEventListener('pointermove',onSchemePointerMove);wrap.addEventListener('pointerup',onSchemePointerUp);wrap.addEventListener('pointercancel',onSchemePointerUp);wrap.addEventListener('wheel',e=>{e.preventDefault();setZoom(state.viewTransform.zoom*(e.deltaY<0?1.1:.9));},{passive:false});
 
-  ['calcGaugeSource','calcGaugeTarget','calcRowsSource','calcRowsTarget','targetMotifs'].forEach(id=>$(id).addEventListener('input',updateCalcFactors));
+  ['calcGaugeSource','calcGaugeTarget','calcRowsSource','calcRowsTarget','targetMotifs'].forEach(id=>$(id).addEventListener('input',onCalcInputChanged));
   $('calcMode').addEventListener('change',updateCalcModeUi);$('calculateBtn').addEventListener('click',calculateAll);$('applyCalcBtn').addEventListener('click',applyCalculation);$('analyzeBtn').addEventListener('click',runAnalysis);
 
-  $('exportJsonBtn').addEventListener('click',exportProject);$('exportSvgBtn').addEventListener('click',exportSvg);$('copyInstructionBtn').addEventListener('click',copyInstruction);$('printBtn').addEventListener('click',()=>window.print());
+  $('exportJsonBtn').addEventListener('click',exportProject);$('exportSvgBtn').addEventListener('click',exportSvg);$('copyInstructionBtn').addEventListener('click',copyInstruction);$('printBtn').addEventListener('click',printPattern);
   $('importJsonInput').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)importProject(f);e.target.value='';});
   $('newProjectBtn').addEventListener('click',()=>{if(confirm('Utworzyć pusty projekt?'))makeEmptyProject();});
   $('resetDemoBtn').addEventListener('click',()=>{if(!confirm('Przywrócić projekt demonstracyjny?'))return;snapshot();const ui=state.uiScale;state=demo();state.uiScale=ui;selectedManualIds.clear();save();render();toast('Przywrócono projekt demonstracyjny.');});

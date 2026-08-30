@@ -92,7 +92,7 @@ function sceneTransform() {
   return `translate(320 320) rotate(${r}) scale(${z}) translate(-320 -320)`;
 }
 
-function generatedCount(r) { return clamp(r.repeats || Math.round(r.stitchCount/Math.max(1,r.rapport)),3,64); }
+function generatedCount(r) { return clamp(Math.round(r.stitchCount)||1,1,120); }
 
 function rectPerimeterPoint(cx,cy,w,h,t) {
   const p = 2*(w+h), d=((t%1)+1)%1*p, left=cx-w/2, top=cy-h/2;
@@ -129,7 +129,7 @@ function renderRectangleGeometry(rounds) {
   let w=maxW,h=w/aspect;if(h>maxH){h=maxH;w=h*aspect;} const left=320-w/2,top=320-h/2; let out=`<rect x="${left}" y="${top}" width="${w}" height="${h}" fill="none" stroke="#d8cfe2" stroke-width="1.5"/>`;
   const gap=rounds.length>1?h/(rounds.length-1):0;
   rounds.forEach((r,i)=>{
-    const y=rounds.length===1?320:top+i*gap, active=r.id===state.activeRoundId,glyph=escapeHtml(symbolById(r.stitchType).glyph),count=clamp(r.rapport*r.repeats,3,48);
+    const y=rounds.length===1?320:top+i*gap, active=r.id===state.activeRoundId,glyph=escapeHtml(symbolById(r.stitchType).glyph),count=clamp(Math.round(r.stitchCount)||1,1,120);
     out += `<line x1="${left}" y1="${y}" x2="${left+w}" y2="${y}" stroke="${active?'#7c3aed':'#c9bedc'}" stroke-width="${active?3:1.4}"/>`;
     for(let k=0;k<count;k++){const x=left+(count===1?0:w*k/(count-1));out+=`<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="${active?14:11}" fill="${active?'#5b21b6':'#786d84'}">${glyph}</text>`;}
     out += `<text x="${left+5}" y="${y-5}" font-size="10" fill="${active?'#5b21b6':'#8a8096'}">${r.n}</text>`;
@@ -192,9 +192,14 @@ function setSelectedAsRapport() {
   const selected=state.manualSymbols.filter(m=>selectedManualIds.has(m.id) && m.roundId===state.activeRoundId);
   if(!selected.length)return toast('Zaznacz symbole z aktywnego okrążenia / rzędu.');
   const r=state.rounds.find(x=>x.id===state.activeRoundId); if(!r)return;
+  const rapport=selected.length;
+  if(r.stitchCount % rapport !== 0) {
+    const low=Math.max(rapport,Math.floor(r.stitchCount/rapport)*rapport),high=Math.ceil(r.stitchCount/rapport)*rapport;
+    return toast(`Nie można ustawić raportu ${rapport}: ${r.stitchCount} oczek nie dzieli się bez reszty. Najbliżej: ${low} lub ${high}.`);
+  }
   const group=cryptoId();
-  mutate(()=>{selected.forEach(m=>m.rapportGroup=group);r.rapport=selected.length;r.repeats=Math.max(1,Math.round(r.stitchCount/r.rapport));});
-  toast(`Raport ustawiony: ${selected.length} symboli.`);
+  mutate(()=>{selected.forEach(m=>m.rapportGroup=group);r.rapport=rapport;r.repeats=r.stitchCount/rapport;});
+  toast(`Raport ustawiony: ${rapport} symboli × ${r.repeats}.`);
 }
 
 function setZoom(z) { state.viewTransform.zoom=clamp(z,.35,4); save(); renderScheme(); }

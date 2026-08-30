@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const context={Math,Number,String,Array,Object,Map,Set,JSON,console,clamp:(v,a,b)=>Math.min(b,Math.max(a,v))};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('app-recalc.js','utf8'),context,{filename:'app-recalc.js'});
+const source={rapport:3,repeats:4,stitchCount:12};
+let r=context.fitRound(source,18,'nearest',0);
+assert.strictEqual(r.target,r.rapport*r.repeats,'nearest must keep arithmetic consistency');
+assert.strictEqual(r.rapport,3);assert.strictEqual(r.repeats,6);
+r=context.fitRound(source,17,'nearest',0);
+assert.strictEqual(r.target,r.rapport*r.repeats,'nearest fallback must stay consistent');
+assert.strictEqual(r.target,17);assert.strictEqual(r.rapport,1);assert.strictEqual(r.repeats,17);
+r=context.fitRound(source,19,'rapport',0);
+assert.strictEqual(r.target,r.rapport*r.repeats,'rapport mode must stay consistent');
+console.log('logic invariants OK');

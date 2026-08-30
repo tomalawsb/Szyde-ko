@@ -5,6 +5,7 @@ function densityPerSelectedUnit() {
 }
 
 function syncCalcInputs() {
+  invalidateCalcDraft(true);
   const p=state.project,u=p.unit,density=densityPerSelectedUnit();
   if(p.shape==='circle'){
     $('recalcDimensionFields').innerHTML=`<label>Średnica oryginału [${u}]<input id="calcOriginalSize" type="number" min="0.1" step="0.1" value="${p.originalSize}"></label><label>Średnica docelowa [${u}]<input id="calcTargetSize" type="number" min="0.1" step="0.1" value="${p.targetSize}"></label>`;
@@ -12,7 +13,7 @@ function syncCalcInputs() {
     $('recalcDimensionFields').innerHTML=`<label>Szerokość oryg. [${u}]<input id="calcOriginalWidth" type="number" min="0.1" step="0.1" value="${p.originalWidth}"></label><label>Wysokość oryg. [${u}]<input id="calcOriginalHeight" type="number" min="0.1" step="0.1" value="${p.originalHeight}"></label><label>Szerokość docel. [${u}]<input id="calcTargetWidth" type="number" min="0.1" step="0.1" value="${p.targetWidth}"></label><label>Wysokość docel. [${u}]<input id="calcTargetHeight" type="number" min="0.1" step="0.1" value="${p.targetHeight}"></label>`;
   }
   $('calcGaugeSource').value=formatPlain(density.sourceStitch); $('calcGaugeTarget').value=formatPlain(density.targetStitch); $('calcRowsSource').value=formatPlain(density.sourceRows); $('calcRowsTarget').value=formatPlain(density.targetRows);
-  [...$('recalcDimensionFields').querySelectorAll('input')].forEach(el=>el.addEventListener('input',updateCalcFactors));
+  [...$('recalcDimensionFields').querySelectorAll('input')].forEach(el=>el.addEventListener('input',onCalcInputChanged));
   updateCalcFactors();
 }
 
@@ -32,6 +33,20 @@ function getCalcFactors() {
   return { horizontal:safeRatio(d.tw,d.ow)*safeRatio(gt,gs), vertical:safeRatio(d.th,d.oh)*safeRatio(rt,rs), d, gs,gt,rs,rt };
 }
 
+function invalidateCalcDraft(clearResults=false) {
+  calcDraft=null;
+  if($('applyCalcBtn')) $('applyCalcBtn').disabled=true;
+  if(clearResults && $('calcResults')) {
+    $('calcResults').classList.add('empty-state');
+    $('calcResults').textContent='Dane zmieniono. Naciśnij „Przelicz”, aby odświeżyć wynik.';
+  }
+}
+
+function onCalcInputChanged() {
+  invalidateCalcDraft(true);
+  updateCalcFactors();
+}
+
 function updateCalcFactors() {
   if(!$('calcGaugeSource'))return;
   const f=getCalcFactors(); $('calcHorizontalFactor').textContent=formatNum(f.horizontal,3)+'×'; $('calcVerticalFactor').textContent=formatNum(f.vertical,3)+'×'; $('calcTargetRounds').textContent=state.rounds.length?Math.max(1,Math.round(state.rounds.length*f.vertical)):'0';
@@ -48,6 +63,10 @@ function fitRound(source, raw, mode, targetMotifs) {
     const rapTarget=Math.max(source.rapport,Math.round(raw/source.rapport)*source.rapport),rapErr=Math.abs(rapTarget-raw)/Math.max(1,raw);
     const motifRap=Math.max(1,Math.round(raw/source.repeats)),motifTarget=motifRap*source.repeats,motifErr=Math.abs(motifTarget-raw)/Math.max(1,raw)+Math.abs(motifRap-source.rapport)/Math.max(1,source.rapport)*.12;
     if(rapErr<=motifErr+.025)byRapport(); else byMotifs(); decision='auto: '+decision;
+  } else if(mode==='nearest') {
+    target=Math.max(1,Math.round(raw));
+    if(target % Math.max(1,source.rapport)===0){rapport=Math.max(1,source.rapport);repeats=target/rapport;decision='najbliższa liczba; raport zachowany';}
+    else {rapport=1;repeats=target;decision='najbliższa liczba; raport zresetowany';}
   }
   return {target,rapport,repeats,decision};
 }
@@ -62,9 +81,14 @@ function calculateAll() {
     out.push({ id:cryptoId(), n:j+1, stitchType:src.stitchType, stitchCount:fit.target, rapport:fit.rapport, repeats:fit.repeats, increase:0, note:src.note, sourceRoundId:src.id, sourceN:src.n, raw, decision:fit.decision });
   }
   out.forEach((r,i)=>r.increase=r.stitchCount-(out[i-1]?.stitchCount||0));
-  const mappedManual=state.manualSymbols.map(m=>{
-    const oldIdx=source.findIndex(r=>r.id===m.roundId),newIdx=oldIdx<0?0:(source.length===1?0:Math.round(oldIdx*(targetCount-1)/(source.length-1))),newRound=out[clamp(newIdx,0,out.length-1)];
-    return {...m,id:cryptoId(),roundId:newRound.id};
+  const mappedManual=[];
+  out.forEach(newRound=>{
+    const groupMap=new Map();
+    state.manualSymbols.filter(m=>m.roundId===newRound.sourceRoundId).forEach(m=>{
+      let rapportGroup=null;
+      if(m.rapportGroup){if(!groupMap.has(m.rapportGroup))groupMap.set(m.rapportGroup,cryptoId());rapportGroup=groupMap.get(m.rapportGroup);}
+      mappedManual.push({...m,id:cryptoId(),roundId:newRound.id,rapportGroup});
+    });
   });
   calcDraft={rounds:out,manualSymbols:mappedManual,factors:f};
   $('calcResults').classList.remove('empty-state');
@@ -78,9 +102,11 @@ function applyCalculation() {
     state.rounds=calcDraft.rounds.map(({sourceRoundId,sourceN,raw,decision,...r})=>r); state.manualSymbols=calcDraft.manualSymbols; state.activeRoundId=state.rounds[0]?.id||null;
     if(state.project.shape==='circle'){state.project.originalSize=Number($('calcOriginalSize').value)||state.project.originalSize;state.project.targetSize=Number($('calcTargetSize').value)||state.project.targetSize;}
     else{state.project.originalWidth=Number($('calcOriginalWidth').value)||state.project.originalWidth;state.project.originalHeight=Number($('calcOriginalHeight').value)||state.project.originalHeight;state.project.targetWidth=Number($('calcTargetWidth').value)||state.project.targetWidth;state.project.targetHeight=Number($('calcTargetHeight').value)||state.project.targetHeight;}
-    const unit=state.project.unit,base=unit==='mm'?1:1;
-    state.project.gaugeSampleWidth=base;state.project.gaugeSampleHeight=base;state.project.targetGaugeSampleWidth=base;state.project.targetGaugeSampleHeight=base;
-    state.project.gaugeStitches=Number($('calcGaugeSource').value)||state.project.gaugeStitches;state.project.targetGaugeStitches=Number($('calcGaugeTarget').value)||state.project.targetGaugeStitches;state.project.gaugeRows=Number($('calcRowsSource').value)||state.project.gaugeRows;state.project.targetGaugeRows=Number($('calcRowsTarget').value)||state.project.targetGaugeRows;
+    const sourceStitchDensity=Number($('calcGaugeSource').value)||0,targetStitchDensity=Number($('calcGaugeTarget').value)||0,sourceRowDensity=Number($('calcRowsSource').value)||0,targetRowDensity=Number($('calcRowsTarget').value)||0;
+    state.project.gaugeStitches=sourceStitchDensity*state.project.gaugeSampleWidth;
+    state.project.targetGaugeStitches=targetStitchDensity*state.project.targetGaugeSampleWidth;
+    state.project.gaugeRows=sourceRowDensity*state.project.gaugeSampleHeight;
+    state.project.targetGaugeRows=targetRowDensity*state.project.targetGaugeSampleHeight;
   });
   selectedManualIds.clear();calcDraft=null;$('applyCalcBtn').disabled=true;toast('Przeliczenie zastosowane.');
 }

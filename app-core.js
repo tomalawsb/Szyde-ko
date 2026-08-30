@@ -98,7 +98,7 @@ function migrate(raw) {
     version:2, uiScale:Number(src.uiScale)||1, activeView:src.activeView || 'home', previewMode:src.previewMode || 'scheme',
     project:p,
     rounds:Array.isArray(src.rounds) ? src.rounds.map(r => ({ id:r.id||cryptoId(), n:r.n||1, stitchType:r.stitchType||'double', stitchCount:Number(r.stitchCount)||1, rapport:Number(r.rapport)||1, repeats:Number(r.repeats)||1, increase:Number(r.increase)||0, note:r.note||'' })) : [],
-    manualSymbols:Array.isArray(src.manualSymbols) ? src.manualSymbols.map(m => ({ id:m.id||cryptoId(), roundId:m.roundId||null, symbolId:m.symbolId||'double', x:Number(m.x)||320, y:Number(m.y)||320, rotation:Number(m.rotation)||0, rapportGroup:m.rapportGroup||null })) : [],
+    manualSymbols:Array.isArray(src.manualSymbols) ? src.manualSymbols.map(m => ({ id:m.id||cryptoId(), roundId:m.roundId||null, symbolId:m.symbolId||'double', x:Number.isFinite(Number(m.x))?Number(m.x):320, y:Number.isFinite(Number(m.y))?Number(m.y):320, rotation:Number(m.rotation)||0, rapportGroup:m.rapportGroup||null })) : [],
     activeRoundId:src.activeRoundId || null,
     viewTransform:{ zoom:Number(src.viewTransform?.zoom)||1, rotation:Number(src.viewTransform?.rotation)||0 },
     editor:{ mode:src.editor?.mode || 'select', symbolId:src.editor?.symbolId || 'double', multiSelect:!!src.editor?.multiSelect }
@@ -128,7 +128,16 @@ function normalizeState(target = state) {
     r.increase = Math.round(Number(r.increase)||0);
     r.stitchType = symbolById(r.stitchType).id;
   });
-  target.manualSymbols = (target.manualSymbols || []).filter(m => target.rounds.some(r => r.id === m.roundId) && symbolById(m.symbolId));
+  target.manualSymbols = (target.manualSymbols || [])
+    .filter(m => target.rounds.some(r => r.id === m.roundId))
+    .map(m => ({
+      ...m,
+      symbolId:symbolById(m.symbolId).id,
+      x:clamp(Number.isFinite(Number(m.x)) ? Number(m.x) : 320,0,640),
+      y:clamp(Number.isFinite(Number(m.y)) ? Number(m.y) : 320,0,640),
+      rotation:Number(m.rotation)||0,
+      rapportGroup:m.rapportGroup||null
+    }));
   if (target.activeRoundId && !target.rounds.some(r => r.id === target.activeRoundId)) target.activeRoundId = target.rounds[0]?.id || null;
   if (!target.activeRoundId && target.rounds[0]) target.activeRoundId = target.rounds[0].id;
   target.viewTransform = target.viewTransform || {zoom:1,rotation:0};
@@ -227,11 +236,22 @@ function switchView(view) {
 }
 
 function bindProjectInput(id,key,numeric=false) {
-  $(id).addEventListener('change', e => mutate(() => { state.project[key] = numeric ? Number(e.target.value)||0 : e.target.value; }));
-  $(id).addEventListener('input', e => {
-    state.project[key] = numeric ? Number(e.target.value)||0 : e.target.value;
-    updateRatios(); clearTimeout(saveTimer); saveTimer = setTimeout(save,180);
+  const el=$(id);
+  const applyValue=e=>{ state.project[key] = numeric ? Number(e.target.value)||0 : e.target.value; };
+  const beginEdit=()=>{
+    if(el.dataset.historyOpen==='1') return;
+    snapshot();
+    el.dataset.historyOpen='1';
+  };
+  el.addEventListener('input', e => {
+    beginEdit(); applyValue(e); updateRatios();
+    clearTimeout(saveTimer); saveTimer=setTimeout(save,180);
   });
+  el.addEventListener('change', e => {
+    beginEdit(); applyValue(e); el.dataset.historyOpen='0';
+    normalizeState(); commitChange(true);
+  });
+  el.addEventListener('blur',()=>{ el.dataset.historyOpen='0'; });
 }
 
 function changeUnit(newUnit) {
