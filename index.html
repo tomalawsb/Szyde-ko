@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="description" content="Szydełko Studio — projektowanie, przeliczanie i analiza wzorów szydełkowych." />
+  <title>Szydełko Studio</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon.svg" />
+  <link rel="apple-touch-icon" href="assets/icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🧶</div>
+        <div>
+          <strong>Szydełko Studio</strong>
+          <small id="saveState">Zapisano lokalnie</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="undoBtn" title="Cofnij" aria-label="Cofnij">↶</button>
+        <button class="icon-btn" id="redoBtn" title="Ponów" aria-label="Ponów">↷</button>
+        <label class="scale-control" title="Skala interfejsu">
+          <span>UI</span>
+          <select id="uiScale">
+            <option value="0.8">80%</option>
+            <option value="0.9">90%</option>
+            <option value="1" selected>100%</option>
+            <option value="1.1">110%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </label>
+        <button class="secondary" id="installBtn" hidden>Zainstaluj</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Nawigacja">
+      <button class="nav-item active" data-view="project"><span>⌂</span><b>Projekt</b></button>
+      <button class="nav-item" data-view="pattern"><span>◉</span><b>Wzór</b></button>
+      <button class="nav-item" data-view="recalc"><span>↔</span><b>Przelicz</b></button>
+      <button class="nav-item" data-view="analysis"><span>✓</span><b>Analiza</b></button>
+      <button class="nav-item" data-view="symbols"><span>✣</span><b>Symbole</b></button>
+      <button class="nav-item" data-view="export"><span>⇩</span><b>Eksport</b></button>
+    </aside>
+
+    <main class="workspace">
+      <section class="view active" id="view-project">
+        <div class="section-head">
+          <div><h1>Projekt</h1><p>Podstawowe dane robótki i próbki.</p></div>
+          <span class="badge">offline</span>
+        </div>
+        <div class="card-grid two">
+          <article class="card">
+            <h2>Dane projektu</h2>
+            <div class="form-grid">
+              <label class="full">Nazwa projektu<input id="projectName" type="text" /></label>
+              <label>Typ robótki<select id="projectShape"><option value="circle">Okrągła</option><option value="square">Kwadratowa</option><option value="rectangle">Prostokątna</option></select></label>
+              <label>Szydełko [mm]<input id="hookMm" type="number" min="0.5" step="0.25" /></label>
+              <label class="full">Włóczka / kordonek<input id="yarn" type="text" /></label>
+              <label>Rozmiar oryginału [cm]<input id="originalSize" type="number" min="0.1" step="0.1" /></label>
+              <label>Rozmiar docelowy [cm]<input id="targetSize" type="number" min="0.1" step="0.1" /></label>
+              <label class="full">Notatki<textarea id="projectNotes" rows="4"></textarea></label>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Próbka i gęstość</h2>
+            <p class="hint">Najlepiej zmierzyć realną próbkę. Bez tego matematyka jest poprawna, a robótka może mieć własne poglądy.</p>
+            <div class="form-grid">
+              <label>Oczka / 10 cm<input id="gaugeStitches" type="number" min="1" step="0.1" /></label>
+              <label>Rzędy / 10 cm<input id="gaugeRows" type="number" min="1" step="0.1" /></label>
+              <label>Docelowe oczka / 10 cm<input id="targetGaugeStitches" type="number" min="1" step="0.1" /></label>
+              <label>Docelowe rzędy / 10 cm<input id="targetGaugeRows" type="number" min="1" step="0.1" /></label>
+            </div>
+            <div class="metric-row">
+              <div><span>Współczynnik rozmiaru</span><strong id="sizeRatio">1,00×</strong></div>
+              <div><span>Współczynnik gęstości</span><strong id="gaugeRatio">1,00×</strong></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-pattern">
+        <div class="section-head">
+          <div><h1>Wzór</h1><p>Okrążenia, raporty i podgląd schematu.</p></div>
+          <button class="primary" id="addRoundBtn">+ Dodaj okrążenie</button>
+        </div>
+        <div class="pattern-layout">
+          <article class="card preview-card">
+            <div class="card-toolbar">
+              <h2>Podgląd</h2>
+              <div class="segmented"><button data-preview-mode="scheme" class="active">Schemat</button><button data-preview-mode="instruction">Instrukcja</button></div>
+            </div>
+            <div id="schemeWrap" class="scheme-wrap"><svg id="schemeSvg" viewBox="0 0 640 640" role="img" aria-label="Podgląd wzoru"></svg></div>
+            <div id="instructionWrap" class="instruction-wrap" hidden></div>
+          </article>
+          <article class="card rounds-card">
+            <div class="card-toolbar"><h2>Okrążenia</h2><span id="roundCount" class="badge"></span></div>
+            <div id="roundList" class="round-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-recalc">
+        <div class="section-head"><div><h1>Przelicz wzór</h1><p>Zmiana rozmiaru i gęstości z zachowaniem pełnych raportów.</p></div></div>
+        <div class="card-grid two">
+          <article class="card">
+            <h2>Ustawienia</h2>
+            <div class="form-grid">
+              <label>Rozmiar oryginału [cm]<input id="calcOriginalSize" type="number" min="0.1" step="0.1" /></label>
+              <label>Rozmiar docelowy [cm]<input id="calcTargetSize" type="number" min="0.1" step="0.1" /></label>
+              <label>Oryg. oczka / 10 cm<input id="calcGaugeSource" type="number" min="1" step="0.1" /></label>
+              <label>Docel. oczka / 10 cm<input id="calcGaugeTarget" type="number" min="1" step="0.1" /></label>
+              <label class="full">Tryb<select id="calcMode"><option value="rapport">Zachowaj raport — zalecane</option><option value="nearest">Najbliższa liczba całkowita</option></select></label>
+            </div>
+            <div class="summary-box"><span>Łączny współczynnik</span><strong id="calcFactor">1,000×</strong></div>
+            <button class="primary full-btn" id="calculateBtn">Przelicz wszystkie okrążenia</button>
+          </article>
+          <article class="card">
+            <h2>Wynik</h2>
+            <div id="calcResults" class="calc-results empty-state">Wprowadź dane i naciśnij „Przelicz”.</div>
+            <button id="applyCalcBtn" class="secondary full-btn" disabled>Zastosuj wynik do projektu</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-analysis">
+        <div class="section-head"><div><h1>Analiza</h1><p>Sprawdzenie spójności raportów i przyrostów.</p></div><button class="primary" id="analyzeBtn">Sprawdź wzór</button></div>
+        <div class="metric-row analysis-metrics">
+          <div><span>Błędy</span><strong id="errorCount">0</strong></div>
+          <div><span>Ostrzeżenia</span><strong id="warningCount">0</strong></div>
+          <div><span>Okrążenia</span><strong id="analysisRoundCount">0</strong></div>
+        </div>
+        <div id="analysisList" class="analysis-list"></div>
+        <p class="hint">Ocena falowania/ściągania jest heurystyczna. Koronki i oczka łańcuszka potrafią zignorować prosty model geometryczny z imponującą konsekwencją.</p>
+      </section>
+
+      <section class="view" id="view-symbols">
+        <div class="section-head"><div><h1>Symbole</h1><p>Podstawowa biblioteka oznaczeń PL / US / UK.</p></div></div>
+        <div id="symbolGrid" class="symbol-grid"></div>
+      </section>
+
+      <section class="view" id="view-export">
+        <div class="section-head"><div><h1>Eksport i kopia</h1><p>Projekt jest automatycznie zapisywany w pamięci przeglądarki.</p></div></div>
+        <div class="card-grid two">
+          <article class="card">
+            <h2>Eksport</h2>
+            <div class="action-stack">
+              <button class="primary" id="exportJsonBtn">Pobierz projekt JSON</button>
+              <button class="secondary" id="exportSvgBtn">Pobierz schemat SVG</button>
+              <button class="secondary" id="copyInstructionBtn">Kopiuj instrukcję</button>
+              <button class="secondary" id="printBtn">Drukuj / zapisz PDF</button>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Import / narzędzia</h2>
+            <div class="action-stack">
+              <label class="file-btn">Wczytaj projekt JSON<input id="importJsonInput" type="file" accept="application/json,.json" hidden /></label>
+              <button class="danger" id="resetDemoBtn">Przywróć projekt demonstracyjny</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector" id="inspector">
+      <div class="inspector-head"><h2>Właściwości</h2><button id="closeInspector" class="icon-btn">×</button></div>
+      <div id="inspectorEmpty" class="empty-state">Wybierz okrążenie.</div>
+      <div id="inspectorForm" hidden>
+        <div class="form-grid one">
+          <label>Okrążenie<input id="insRoundNo" type="number" disabled /></label>
+          <label>Rodzaj oczka<select id="insStitchType"></select></label>
+          <label>Liczba oczek<input id="insStitchCount" type="number" min="1" step="1" /></label>
+          <label>Oczka w raporcie<input id="insRapport" type="number" min="1" step="1" /></label>
+          <label>Liczba powtórzeń<input id="insRepeats" type="number" min="1" step="1" /></label>
+          <label>Przyrost względem poprzedniego<input id="insIncrease" type="number" step="1" /></label>
+          <label>Notatka<textarea id="insNote" rows="4"></textarea></label>
+        </div>
+        <div class="action-stack compact"><button id="duplicateRoundBtn" class="secondary">Duplikuj</button><button id="deleteRoundBtn" class="danger">Usuń okrążenie</button></div>
+      </div>
+    </aside>
+
+    <nav class="mobile-nav" aria-label="Nawigacja mobilna">
+      <button class="nav-item active" data-view="project"><span>⌂</span><b>Projekt</b></button>
+      <button class="nav-item" data-view="pattern"><span>◉</span><b>Wzór</b></button>
+      <button class="nav-item" data-view="recalc"><span>↔</span><b>Przelicz</b></button>
+      <button class="nav-item" data-view="analysis"><span>✓</span><b>Analiza</b></button>
+      <button class="nav-item" data-view="export"><span>⇩</span><b>Eksport</b></button>
+    </nav>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
