@@ -1,0 +1,43 @@
+name: Package Szydelko Studio
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate JavaScript
+        run: |
+          node --check app-core.js
+          node --check app-editor.js
+          node --check app-recalc.js
+          node --check app-main.js
+      - name: Validate required files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f manifest.webmanifest
+          test -f sw.js
+          test -f Deploy-GitHub.ps1
+          test -f assets/icon-192.png
+          test -f assets/icon-512.png
+          grep -q 'app-core.js' index.html
+          grep -q 'app-editor.js' index.html
+          grep -q 'app-recalc.js' index.html
+          grep -q 'app-main.js' index.html
+      - name: Build ZIP
+        run: |
+          mkdir package
+          rsync -a --exclude='.git' --exclude='package' ./ package/Szydelko_Studio_PWA/
+          cd package
+          zip -qr Szydelko_Studio_PWA_v2.0.0.zip Szydelko_Studio_PWA
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Szydelko_Studio_PWA_v2.0.0
+          path: package/Szydelko_Studio_PWA_v2.0.0.zip
+          if-no-files-found: error
